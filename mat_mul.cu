@@ -20,7 +20,7 @@ void get_matrix(int n1, int n2, float *matrix, FILE *file)
     {
         for (int j = 0; j < n2; j++)
         {
-            fscanf(file, "%f ", matrix + i * n1 + j);
+            fscanf(file, "%f ", matrix + i * n2 + j);
         }
     }
 }
@@ -37,6 +37,7 @@ void get_matrix(int n1, int n2, float *matrix, FILE *file)
 void get_inputs(float **M1, float **M2, int *n1, int *n2, int *n3)
 {
     char file_path[MAX_FILE_NAME];
+    printf("input path to txt file:\n");
     scanf("%s", file_path);
     FILE *file = fopen(file_path, "r");
     fscanf(file, "%d %d %d\n", n1, n2, n3);
@@ -46,6 +47,7 @@ void get_inputs(float **M1, float **M2, int *n1, int *n2, int *n3)
 
     get_matrix(*n1, *n2, *M1, file);
     get_matrix(*n2, *n3, *M2, file);
+    fclose(file);
 }
 
 /**
@@ -67,24 +69,21 @@ void verify(float *Ans, float *A, float *B, int n1, int n2, int n3)
             float sum = 0;
             for (int k = 0; k < n2; k++)
             {
-                sum += A[k * n1 + i] * B[j * n2 + k];
+                sum += A[i * n2 + k] * B[k * n3 + j];
             }
             printf("%.2f ", sum);
         }
         printf("\n");
     }
-    for (int i = 0; i < n1; i++)
+    for (int i = 0; i < 120; i++)
     {
-        for (int j = 0; j < n3; j++)
-        {
-            printf("%.2f ", Ans[j * n1 + i]);
-        }
-        printf("\n");
+        printf("%.2f ", Ans[i]);
     }
 }
 
 int main()
 {
+
     int m, n, k;
     float *A, *B, *C;
 
@@ -105,12 +104,12 @@ int main()
     float alpha = 1.0f;
     float beta = 0.0f;
 
-    cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, k, n, &alpha, A_d, m, B_d, n, &beta, C_d, m);
-
+    cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, m, n, &alpha, B_d, k, A_d, k, &beta, C_d, n);
     cudaMemcpy(C, C_d, m * k * sizeof(float), cudaMemcpyDeviceToHost);
 
-    // verify(C, A, B, m, n, k);
+    verify(C, A, B, m, n, k);
 
+    cublasDestroy(handle);
     free(A);
     free(B);
     free(C);
